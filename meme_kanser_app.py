@@ -8,24 +8,6 @@ import tensorflow as tf
 # --- 1. SAYFA AYARLARI ---
 st.set_page_config(page_title="Sağlık46 | Giresun Üniversitesi", layout="wide")
 
-# GRAFİKLERİ YAN YANA ZORLAYAN ÖZEL CSS
-st.markdown("""
-    <style>
-    /* Sütunların yan yana durmasını ve birbirinin altına kaymamasını sağlar */
-    [data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        align-items: flex-start !important;
-    }
-    [data-testid="stColumn"] {
-        min-width: 45% !important;
-    }
-    .main-title { text-align: center; font-family: serif; color: #FFFFFF; margin-bottom: 0px; }
-    .sub-title { text-align: center; font-family: sans-serif; color: #BBBBBB; font-size: 1.1rem; margin-bottom: 20px; }
-    </style>
-""", unsafe_mode=True)
-
 # --- 2. HATA GİDERİCİ (CUSTOM OBJECTS) ---
 class FixedDense(tf.keras.layers.Dense):
     def __init__(self, *args, **kwargs):
@@ -49,40 +31,39 @@ def model_getir():
 model = model_getir()
 
 # --- 4. AKADEMİK ÜST BAŞLIK ---
-st.markdown("<h1 class='main-title'>Sağlık46: Meme Kanseri Teşhis Sistemi</h1>", unsafe_mode=True)
-st.markdown("<p class='sub-title'>Giresun Üniversitesi Mühendislik Fakültesi<br>Araştırmacı: Emine Berk (2207060044) | Danışman: Dr. Öğr. Üyesi Muhammet Çakmak</p>", unsafe_mode=True)
+st.title("Sağlık46: Meme Kanseri Teşhis Sistemi")
+st.write(f"**Araştırmacı:** Emine Berk (2207060044) | **Danışman:** Dr. Öğr. Üyesi Muhammet Çakmak | Giresun Üniversitesi")
 st.divider()
 
-# --- 5. DETAYLI ÖZET VE METODOLOJİ ---
-with st.expander("Proje Detayları ve CNN Metodolojisi", expanded=False):
+# --- 5. DETAYLI PROJE ÖZETİ VE METODOLOJİ ---
+with st.expander("Proje Detayları ve CNN Metodolojisi", expanded=True):
     st.write("### Proje Hakkında")
-    st.write("Bu sistem, ultrason görüntülerini derin öğrenme algoritmalarıyla analiz ederek teşhis desteği sağlamak üzere tasarlanmıştır.")
-    c_met1, c_met2 = st.columns(2)
-    with c_met1:
+    st.write("Bu çalışma, ultrason görüntülerindeki patolojik dokuları derin öğrenme (CNN) mimarisi ile analiz ederek sınıflandırmaktadır.")
+    
+    col_tech1, col_tech2 = st.columns(2)
+    with col_tech1:
         st.write("**Teknik Katman Analizi**")
-        st.info("Convolutional (Evrişim) katmanları görüntünün doku özelliklerini çıkarırken, Pooling katmanları veriyi optimize eder.")
-    with c_met2:
-        st.write("**Sınıflandırma Mantığı**")
-        st.success("Model; Normal, Benign (İyi Huylu) ve Malignant (Kötü Huylu) olmak üzere 3 sınıfta teşhis koyar.")
+        st.info("Convolutional katmanları tümör sınırlarını yakalar, Pooling katmanları ise veriyi optimize ederek en belirgin özellikleri ön plana çıkarır.")
+    with col_tech2:
+        st.write("**Sınıflandırma Kategorileri**")
+        st.success("Sistem; Normal doku, İyi Huylu (Benign) ve Kötü Huylu (Malignant) olmak üzere üç sınıfta teşhis desteği sunar.")
 
-# --- 6. MODEL PERFORMANSI (YAN YANA SABİTLENDİ) ---
-st.subheader("Model Eğitim Performans Verileri")
+# --- 6. MODEL PERFORMANSI (YAN YANA GÜVENLİ DÜZEN) ---
+st.write("### Model Eğitim Performans Verileri")
+col_grafik1, col_grafik2 = st.columns(2)
 
-# GitHub'daki dosya yolların
-grafik_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' # Accuracy/Loss grafiği
+# Dosya yolları
+grafik_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' # Accuracy/Loss
 karma_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'   # Confusion Matrix
 
-# Bu kısım görselleri yan yana getiren ana bloktur
-col_g1, col_g2 = st.columns(2, gap="medium")
-
-with col_g1:
+with col_grafik1:
     st.write("**Öğrenme Eğrileri (Accuracy & Loss)**")
     if os.path.exists(grafik_yolu):
         st.image(grafik_yolu, use_container_width=True)
     else:
         st.error("Accuracy grafiği bulunamadı.")
 
-with col_g2:
+with col_grafik2:
     st.write("**Hata Analizi (Confusion Matrix)**")
     if os.path.exists(karma_yolu):
         st.image(karma_yolu, use_container_width=True)
@@ -96,8 +77,8 @@ st.subheader("Görüntü Analizi ve Canlı Teşhis")
 c1, c2 = st.columns([1, 1])
 
 with c1:
-    st.write("**Veri Girişi**")
-    file = st.file_uploader("Ultrason görüntüsü yükleyiniz", type=["jpg", "png", "jpeg"])
+    st.write("**Görüntü Yükleme**")
+    file = st.file_uploader("Analiz için ultrason görüntüsü seçin", type=["jpg", "png", "jpeg"])
     if file:
         img = Image.open(file).convert('RGB')
         st.image(img, caption='Sisteme Aktarılan Görüntü', use_container_width=True)
@@ -109,19 +90,19 @@ with c2:
         img_array = np.array(img_resized) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
         
-        if st.button("Analizi Başlat"):
+        if st.button("Teşhisi Başlat"):
             with st.spinner('Pikseller analiz ediliyor...'):
                 preds = model.predict(img_array)
                 classes = ['İyi Huylu (Benign)', 'Kötü Huylu (Malignant)', 'Normal']
                 res_idx = np.argmax(preds)
                 guven = np.max(preds) * 100
                 
-                st.metric("Tahmin Edilen Sınıf", classes[res_idx])
+                st.metric("Sistem Tahmini", classes[res_idx])
                 st.write(f"**Güven Oranı:** %{guven:.2f}")
                 st.progress(int(guven))
                 
                 if res_idx == 1:
-                    st.error("Kritik Uyarı: Malignant bulgu tespit edildi. Klinik inceleme önerilir.")
+                    st.error("Kritik Uyarı: Malignant bulgu tespit edildi. İleri tetkik önerilir.")
                 else:
                     st.success("Düşük Risk: Bulgular stabil değerlendirilmiştir.")
 
