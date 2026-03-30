@@ -5,10 +5,24 @@ from PIL import Image
 import gdown
 import tensorflow as tf
 
-# --- 1. SAYFA AYARLARI ---
+# --- 1. SAYFA AYARLARI VE AKADEMİK TEMA ---
 st.set_page_config(page_title="Sağlık46 | Giresun Üniversitesi", layout="wide")
 
-# --- 2. MODEL UYUMLULUK KATMANI ---
+# Görsellerin yan yana gelmesini kesinleştirmek için özel CSS
+st.markdown("""
+    <style>
+    .main-title { text-align: center; font-family: serif; color: #FFFFFF; }
+    .sub-title { text-align: center; font-family: sans-serif; color: #BBBBBB; font-size: 1.1rem; margin-bottom: 20px; }
+    .report-card { background-color: #1E1E1E; padding: 20px; border-radius: 10px; border-top: 4px solid #4A90E2; }
+    
+    /* Sunumda grafiklerin yan yana durmasını kesinleştirir */
+    [data-testid="stColumn"] {
+        min-width: 450px;
+    }
+    </style>
+""", unsafe_mode=True)
+
+# --- 2. HATA GİDERİCİ (CUSTOM OBJECTS) ---
 class FixedDense(tf.keras.layers.Dense):
     def __init__(self, *args, **kwargs):
         kwargs.pop('quantization_config', None)
@@ -25,71 +39,72 @@ def model_getir():
             gdown.download(drive_url, model_yolu, quiet=False)
         except: return None
     try:
+        # safe_mode=False ekleyerek tüm yükleme hatalarını bypass ediyoruz
         return tf.keras.models.load_model(model_yolu, custom_objects={'Dense': FixedDense}, compile=False, safe_mode=False)
     except: return None
 
 model = model_getir()
 
-# --- 4. AKADEMİK ÜST BİLGİ ---
-st.title("Sağlık46: Meme Kanseri Teşhis Sistemi")
-st.write(f"Araştırmacı: Emine Berk (2207060044) | Danışman: Dr. Öğr. Üyesi Muhammet Çakmak | Giresun Üniversitesi")
+# --- 4. ÜST BAŞLIK ---
+st.markdown("<h1 class='main-title'>Sağlık46: Meme Kanseri Teşhis Sistemi</h1>", unsafe_mode=True)
+st.markdown("<p class='sub-title'>Giresun Üniversitesi Mühendislik Fakültesi<br>Araştırmacı: Emine Berk (2207060044) | Danışman: Dr. Öğr. Üyesi Muhammet Çakmak</p>", unsafe_mode=True)
 st.divider()
 
-# --- 5. TEKNİK METODOLOJİ VE CNN ÖZETİ ---
-with st.expander("Metodoloji ve CNN Mimari Özeti", expanded=False):
-    col_tech1, col_tech2 = st.columns(2)
-    with col_tech1:
-        st.write("**Proje Amacı**")
-        st.write("Bu çalışma, evrişimli sinir ağları (CNN) mimarisi kullanılarak ultrason görüntüleri üzerinden patolojik sınıflandırma yapmaktadır.")
-    with col_tech2:
-        st.write("**CNN Katman Yapısı**")
-        st.write("- **Convolutional Layers:** Görüntüdeki mikro-kireçlenmeleri ve doku bozukluklarını tespit eder.")
-        st.write("- **Pooling & Dropout:** Veri boyutunu optimize ederken aşırı öğrenmeyi (overfitting) engeller.")
-        st.write("- **Dense & Softmax:** Olasılıksal bir güven oranıyla nihai teşhis sonucunu üretir.")
+# --- 5. TEKNİK ÖZET ---
+with st.expander("Metodoloji ve Teknik Metodoloji (CNN Özeti)", expanded=False):
+    st.write("""
+    **Genel Yaklaşım:** Evrişimli Sinir Ağları (CNN) mimarisi kullanılarak ultrason görüntülerinden patolojik sınıflandırma yapılmıştır.
+    **CNN Katmanları:** Kenar ve doku özelliklerini yakalamak için Convolutional, veriyi sadeleştirmek için Pooling ve nihai olasılık dağılımını üretmek için Softmax katmanları kullanılmıştır.
+    """)
 
-# --- 6. EĞİTİM GRAFİKLERİ (YAN YANA SABİTLENDİ) ---
+# --- 6. EĞİTİM GRAFİKLERİ (YERLERİ DÜZELTİLDİ VE YAN YANA GETİRİLDİ) ---
 st.write("### Model Eğitim Performansı")
 # columns(2) kullanarak yan yana gelmesini kesinleştiriyoruz
 col_grafik1, col_grafik2 = st.columns(2)
 
-# GitHub'daki dosya isimlerin
-g1_yolu = 'Ekran görüntüsü 2026-03-29 231910.png'
-g2_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'
+# GitHub'daki GERÇEK dosya isimlerin
+grafik_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
+karma_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'
 
 with col_grafik1:
-    if os.path.exists(g1_yolu):
-        st.image(g1_yolu, caption="Eğitim ve Doğrulama Grafiği (Accuracy/Loss)", use_container_width=True)
+    st.write("**Eğitim Başarı ve Kayıp Grafiği**")
+    if os.path.exists(grafik_yolu):
+        # image_3.png'de Confusion Matrix duruyordu, buraya Accuracy grafiğini getirdik.
+        st.image(grafik_yolu, use_container_width=True)
     else:
-        st.warning("Grafik 1 bulunamadı.")
-
+        st.error("Grafik dosyası bulunamadı.")
+        
 with col_grafik2:
-    if os.path.exists(g2_yolu):
-        st.image(g2_yolu, caption="Karmaşıklık Matrisi (Confusion Matrix)", use_container_width=True)
+    st.write("**Karmaşıklık Matrisi (Confusion Matrix)**")
+    if os.path.exists(karma_yolu):
+        # image_3.png'de Accuracy grafiği duruyordu, buraya Confusion Matrix'i getirdik.
+        st.image(karma_yolu, use_container_width=True)
     else:
-        st.warning("Grafik 2 bulunamadı.")
+        st.error("Matris dosyası bulunamadı.")
 
 st.divider()
 
 # --- 7. ANALİZ ALANI ---
 st.subheader("Görüntü Analizi ve Teşhis")
-c1, c2 = st.columns([1, 1])
+col1, col2 = st.columns([1, 1])
 
-with c1:
+with col1:
     st.write("**Görüntü Yükleme**")
     file = st.file_uploader("Ultrason Görüntüsü Seçin", type=["jpg", "png", "jpeg"])
     if file:
         img = Image.open(file).convert('RGB')
         st.image(img, caption='Yüklenen Görüntü', use_container_width=True)
 
-with c2:
+with col2:
     st.write("**Analiz Sonucu**")
     if file and model:
+        st.markdown("<div class='report-card'>", unsafe_mode=True)
         img_resized = img.resize((128, 128))
         img_array = np.array(img_resized) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
         
         if st.button("Teşhisi Başlat"):
-            with st.spinner('Yapay zeka analiz ediyor...'):
+            with st.spinner('Analiz ediliyor...'):
                 preds = model.predict(img_array)
                 classes = ['İyi Huylu (Benign)', 'Kötü Huylu (Malignant)', 'Normal']
                 res_idx = np.argmax(preds)
@@ -100,16 +115,16 @@ with c2:
                 st.progress(int(oran))
                 
                 if res_idx == 1:
-                    st.error("Kritik Bulgu: Klinik inceleme ve biyopsi onayı gereklidir.")
+                    st.error("🚨 Kritik Bulgu: İleri tetkik gereklidir.")
                 else:
-                    st.success("Düşük Risk: Bulgular stabil değerlendirilmiştir.")
+                    st.success("✅ Bulgular stabil değerlendirilmiştir.")
+        st.markdown("</div>", unsafe_mode=True)
 
 # --- 8. KAYNAKÇA ---
 st.divider()
 with st.expander("Akademik Kaynakça"):
-    st.caption("1. Al-Dhabyani, W., Gomaa, M., Khaled, H., & Fahmy, A. (2020). Dataset of breast ultrasound images. Data in Brief.")
-    st.caption("2. Simonyan, K., & Zisserman, A. (2014). Very Deep Convolutional Networks for Large-Scale Image Recognition.")
-    st.caption("3. He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep Residual Learning for Image Recognition.")
-    st.caption("4. Esteva, A., et al. (2017). Dermatologist-level classification of skin cancer with deep neural networks. Nature.")
+    st.caption("1. Al-Dhabyani, W., et al. (2020). Dataset of breast ultrasound images.")
+    st.caption("2. Chollet, F. (2017). Deep Learning with Python.")
+    st.caption("3. Giresun Üniversitesi Bitirme Projesi Kılavuzu.")
 
 st.caption("© 2026 Sağlık46 | Giresun Üniversitesi")
