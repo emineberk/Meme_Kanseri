@@ -31,7 +31,7 @@ def model_getir():
     try:
         import tensorflow as tf
         if os.path.exists(model_yolu):
-            # safe_mode=False: 'quantization_config' gibi versiyon farkı hatalarını bypass eder.
+            # DİKKAT: safe_mode=False ekleyerek o versiyon hatasını bypass ediyoruz
             return tf.keras.models.load_model(model_yolu, compile=False, safe_mode=False)
         else:
             st.error("Model dosyası indirme sonrası bulunamadı!")
@@ -49,7 +49,7 @@ if model:
     st.sidebar.success("✅ Sistem Analize Hazır!")
 else:
     st.sidebar.error("❌ Model Yüklenemedi")
-    st.sidebar.warning("Lütfen Google Drive linkinin 'Herkes'e açık olduğunu kontrol edin.")
+    st.sidebar.warning("Google Drive paylaşım ayarını 'Herkes' yapmayı unutmayın.")
 
 # --- 5. ANALİZ ALANI ---
 st.subheader("Görüntü Analizi ve Teşhis")
@@ -85,16 +85,16 @@ if file:
                     st.progress(int(oran))
                     
                     if res_idx == 1: # Malignant durumu
-                        st.error("🚨 DİKKAT: Şüpheli bulgu tespit edildi. Uzman radyolog incelemesi acilen önerilir.")
+                        st.error("🚨 DİKKAT: Şüpheli bulgu tespit edildi. Uzman radyolog incelemesi önerilir.")
                     elif res_idx == 0: # Benign durumu
                         st.info("ℹ️ İyi huylu doku benzerliği tespit edildi. Takip önerilir.")
                     else: # Normal durumu
                         st.success("✅ Bulgular normal risk grubunda değerlendirilmiştir.")
                     
-                    st.warning("⚠️ **Yasal Uyarı:** Bu sistem bir karar destek aracıdır. Klinik teşhis için Giresun Üniversitesi Tıp Fakültesi veya ilgili sağlık kuruluşlarındaki uzman doktorlara danışılmalıdır.")
+                    st.warning("⚠️ **Yasal Uyarı:** Bu bir karar destek aracıdır. Klinik teşhis için doktora danışılmalıdır.")
             else:
                 st.error("Analiz yapılamıyor: Model dosyası belleğe yüklenemedi.")
 
 # --- 6. ALT BİLGİ ---
 st.divider()
-st.caption("© 2026 Sağlık46 Projesi - Tüm hakları saklıdır. Eğitim amaçlı geliştirilmiştir.")
+st.caption("© 2026 Sağlık46 Projesi - Emine Berk & Dr. Öğr. Üyesi Muhammet Çakmak")
