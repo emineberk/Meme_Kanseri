@@ -25,7 +25,8 @@ def model_getir():
             gdown.download(drive_url, model_yolu, quiet=False)
         except: return None
     try:
-        return tf.keras.models.load_model(model_yolu, custom_objects={'Dense': FixedDense}, compile=False)
+        # safe_mode=False ekleyerek versiyon uyumsuzluklarını önlüyoruz
+        return tf.keras.models.load_model(model_yolu, custom_objects={'Dense': FixedDense}, compile=False, safe_mode=False)
     except: return None
 
 model = model_getir()
@@ -42,13 +43,13 @@ with st.expander("📖 Proje Özeti ve Metodoloji (Tıklayın)", expanded=False)
     **Veri Seti:** Model; Normal, İyi Huylu (Benign) ve Kötü Huylu (Malignant) olmak üzere 3 sınıfta eğitilmiştir.
     """)
 
-# --- 5. EĞİTİM GRAFİKLERİ (SUNUM İÇİN KRİTİK) ---
-with st.expander("📊 Model Eğitim Performansı (Görseller)", expanded=False):
+# --- 5. EĞİTİM GRAFİKLERİ (İSİMLER DÜZELTİLDİ) ---
+with st.expander("📊 Model Eğitim Performansı (Görseller)", expanded=True):
     st.write("**Açıklama:** Modelin eğitim sürecindeki başarı (Accuracy) ve kayıp (Loss) grafikleri aşağıdadır.")
     
-    # GitHub'daki dosya adlarıyla birebir aynı olmalı
-    grafik_yolu = 'Meme_Kanseri_Egitim_Grafigi.png'
-    karma_yolu = 'Karma_Matrisi.png' # Veya ConfusuionMatrix, Conf_Matrix vb.
+    # GitHub'daki GERÇEK dosya isimlerinle birebir eşitledim:
+    grafik_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
+    karma_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'
     
     col1, col2 = st.columns(2)
     with col1:
@@ -56,14 +57,14 @@ with st.expander("📊 Model Eğitim Performansı (Görseller)", expanded=False)
             img_acc = Image.open(grafik_yolu)
             st.image(img_acc, caption='Eğitim Başarı ve Kayıp Grafiği', use_container_width=True)
         else:
-            st.warning(f"{grafik_yolu} bulunamadı.")
+            st.error(f"Grafik dosyası bulunamadı: {grafik_yolu}")
             
     with col2:
         if os.path.exists(karma_yolu):
             img_cm = Image.open(karma_yolu)
             st.image(img_cm, caption='Karmaşıklık Matrisi (Confusion Matrix)', use_container_width=True)
         else:
-            st.warning(f"{karma_yolu} bulunamadı.")
+            st.error(f"Matris dosyası bulunamadı: {karma_yolu}")
 
 st.markdown("---")
 
@@ -86,17 +87,18 @@ with col2:
         img_array = np.expand_dims(img_array, axis=0)
         
         if st.button("🔎 Teşhis Koy"):
-            preds = model.predict(img_array)
-            classes = ['İyi Huylu (Benign)', 'Kötü Huylu (Malignant)', 'Normal']
-            res_idx = np.argmax(preds)
-            oran = np.max(preds) * 100
-            
-            st.metric("Tahmin", classes[res_idx])
-            st.write(f"**Güven Oranı:** %{oran:.2f}")
-            st.progress(int(oran))
-            
-            if res_idx == 1: st.error("🚨 Yüksek Risk: Klinik inceleme gereklidir.")
-            else: st.success("✅ Düşük Risk: Normal bulgular.")
+            with st.spinner('Yapay zeka analiz ediyor...'):
+                preds = model.predict(img_array)
+                classes = ['İyi Huylu (Benign)', 'Kötü Huylu (Malignant)', 'Normal']
+                res_idx = np.argmax(preds)
+                oran = np.max(preds) * 100
+                
+                st.metric("Tahmin", classes[res_idx])
+                st.write(f"**Güven Oranı:** %{oran:.2f}")
+                st.progress(int(oran))
+                
+                if res_idx == 1: st.error("🚨 Yüksek Risk: Klinik inceleme gereklidir.")
+                else: st.success("✅ Düşük Risk: Normal bulgular.")
 
 # --- 7. KAYNAKÇA ---
 st.markdown("---")
