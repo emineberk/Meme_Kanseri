@@ -30,49 +30,54 @@ def model_getir():
 
 model = model_getir()
 
-# --- 4. AKADEMİK ÜST BAŞLIK ---
+# --- 4. ÜST BAŞLIK ---
 st.title("Sağlık46: Meme Kanseri Teşhis Sistemi")
-st.write(f"**Araştırmacı:** Emine Berk (2207060044) | **Danışman:** Dr. Öğr. Üyesi Muhammet Çakmak | Giresun Üniversitesi")
+st.write(f"**Araştırmacı:** Emine Berk (2207060044) | **Danışman:** Dr. Öğr. Üyesi Muhammet Çakmak")
 st.divider()
 
-# --- 5. DETAYLI ÖZET VE BAŞARI METRİKLERİ ---
-with st.expander("Proje Detayları, Metodoloji ve Başarı Oranları", expanded=True):
-    col_info1, col_info2 = st.columns(2)
-    with col_info1:
-        st.write("### Teknik Metodoloji")
+# --- 5. DETAYLI CNN KATMANLARI VE BAŞARI ORANLARI ---
+with st.expander("Metodoloji, Katman Mimarisi ve Başarı Oranları", expanded=True):
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.write("### CNN Katman Mimarisi")
         st.write("""
-        Bu sistem, **CNN (Convolutional Neural Networks)** mimarisi kullanarak ultrason görüntülerindeki 
-        mikroskobik doku değişimlerini analiz eder. Katmanlar arası evrişim işlemleriyle tümör sınırlarını 
-        ve yoğunluk farklarını tespit eder.
+        1. **Convolutional Layer (Evrişim):** Filtreler yardımıyla görüntüdeki kenar, doku ve tümör sınırlarını tespit eder.
+        2. **MaxPooling Layer (Havuzlama):** Veriyi sadeleştirerek en belirgin özellikleri korur, işlem yükünü azaltır.
+        3. **Dropout Layer:** Modelin veriyi ezberlemesini (overfitting) engellemek için eğitim sırasında bazı nöronları rastgele kapatır.
+        4. **Flatten & Dense:** Özellik haritasını düzleştirip sınıflandırma için yoğun ağ yapısına aktarır.
+        5. **Softmax:** Çıkış katmanı olup, görüntünün Normal, Benign veya Malignant olma olasılık yüzdesini üretir.
         """)
-    with col_info2:
-        st.write("### Model Başarı İstatistikleri")
-        # Hocanın en çok bakacağı yer burası
-        st.success("**Eğitim Başarı Oranı (Training Accuracy):** %92.4")
-        st.info("**Doğrulama Başarı Oranı (Validation Accuracy):** %77.1")
-        st.warning("**Sınıflandırma:** Normal, Benign (İyi Huylu), Malignant (Kötü Huylu)")
+    with col_b:
+        st.write("### Başarı İstatistikleri")
+        st.success("**Eğitim (Training) Başarı Oranı:** %92.4")
+        st.info("**Doğrulama (Validation) Başarı Oranı:** %77.1")
+        st.write("""
+        Modelimiz; **Adam** optimizasyon algoritması kullanılarak eğitilmiş olup, 
+        görüntülerin 128x128 boyutunda normalize edilmesiyle (0-255 -> 0-1) yüksek kararlılık sağlanmıştır.
+        """)
+
+
 
 st.divider()
 
-# --- 6. MODEL PERFORMANS GRAFİKLERİ (YAN YANA) ---
-st.subheader("Model Performans Analizi")
-col_graf1, col_graf2 = st.columns(2)
+# --- 6. MODEL PERFORMANS ANALİZİ ---
+st.subheader("Model Eğitim Performans Grafikleri")
+col_g1, col_g2 = st.columns(2)
 
-# Dosya yolları
-grafik_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' # Accuracy/Loss
-karma_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'   # Confusion Matrix
+grafik_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
+karma_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'
 
-with col_graf1:
-    st.write("**Eğitim Süreci: Doğruluk ve Kayıp Grafiği**")
+with col_g1:
+    st.write("**Eğitim ve Doğrulama (Accuracy/Loss)**")
     if os.path.exists(grafik_yolu):
-        st.image(grafik_yolu, use_container_width=True, caption="Modelin öğrenme eğrisi (Accuracy %92)")
+        st.image(grafik_yolu, use_container_width=True)
     else:
-        st.error("Accuracy grafiği bulunamadı.")
+        st.error("Grafik dosyası bulunamadı.")
 
-with col_graf2:
-    st.write("**Hata Analizi: Karmaşıklık Matrisi**")
+with col_g2:
+    st.write("**Karmaşıklık Matrisi (Confusion Matrix)**")
     if os.path.exists(karma_yolu):
-        st.image(karma_yolu, use_container_width=True, caption="Tahminlerin sınıfsal doğruluk dağılımı")
+        st.image(karma_yolu, use_container_width=True)
     else:
         st.error("Matris dosyası bulunamadı.")
 
@@ -84,7 +89,7 @@ c1, c2 = st.columns([1, 1])
 
 with c1:
     st.write("**Görüntü Yükleme**")
-    file = st.file_uploader("Analiz için bir ultrason görüntüsü seçiniz", type=["jpg", "png", "jpeg"])
+    file = st.file_uploader("Ultrason görüntüsü seçin", type=["jpg", "png", "jpeg"])
     if file:
         img = Image.open(file).convert('RGB')
         st.image(img, caption='Yüklenen Görüntü', use_container_width=True)
@@ -97,20 +102,20 @@ with c2:
         img_array = np.expand_dims(img_array, axis=0)
         
         if st.button("Teşhisi Başlat"):
-            with st.spinner('Pikseller ve doku özellikleri analiz ediliyor...'):
+            with st.spinner('Analiz ediliyor...'):
                 preds = model.predict(img_array)
                 classes = ['İyi Huylu (Benign)', 'Kötü Huylu (Malignant)', 'Normal']
                 res_idx = np.argmax(preds)
                 guven = np.max(preds) * 100
                 
-                st.metric("Tahmin Edilen Sınıf", classes[res_idx])
-                st.write(f"**Güven Oranı (Confidence):** %{guven:.2f}")
+                st.metric("Sistem Tahmini", classes[res_idx])
+                st.write(f"**Güven Oranı:** %{guven:.2f}")
                 st.progress(int(guven))
                 
                 if res_idx == 1:
-                    st.error("KRİTİK BULGU: Malignant (Kötü Huylu) doku yapısı tespit edildi. Klinik inceleme gereklidir.")
+                    st.error("Kritik Uyarı: Malignant doku yapısı tespit edildi. Klinik inceleme gereklidir.")
                 else:
-                    st.success("DÜŞÜK RİSK: Bulgular normal/iyi huylu doku sınırları içerisindedir.")
+                    st.success("Düşük Risk: Bulgular stabil değerlendirilmiştir.")
 
 # --- 8. AKADEMİK KAYNAKÇA ---
 st.divider()
