@@ -9,7 +9,6 @@ import tensorflow as tf
 st.set_page_config(page_title="Sağlık46 | Giresun Üniversitesi", layout="wide")
 
 # --- 2. HATA GİDERİCİ (CUSTOM OBJECTS) ---
-# Bazı Keras versiyonlarında model yüklerken oluşan 'quantization_config' hatasını engeller.
 class FixedDense(tf.keras.layers.Dense):
     def __init__(self, *args, **kwargs):
         kwargs.pop('quantization_config', None)
@@ -20,6 +19,7 @@ class FixedDense(tf.keras.layers.Dense):
 def model_getir():
     model_yolu = 'Meme_Kanseri_Final_Modeli.h5'
     if not os.path.exists(model_yolu):
+        # Google Drive'dan modeli çekme işlemi
         file_id = '14OW6zCuzug3Ge7dZoqPuKrbFuOXr6meb'
         drive_url = f'https://drive.google.com/uc?id={file_id}'
         try:
@@ -59,7 +59,7 @@ with st.expander("Metodoloji, Katman Mimarisi ve Başarı Oranları", expanded=T
 
 st.divider()
 
-# --- 6. MODEL PERFORMANS ANALİZİ (3 Grafikli Yapı) ---
+# --- 6. MODEL PERFORMANS ANALİZİ (3 Grafik Yan Yana) ---
 st.subheader("Model Eğitim Performans Grafikleri")
 col_g1, col_g2, col_g3 = st.columns(3)
 
@@ -105,6 +105,7 @@ with c1:
 with c2:
     st.write("**Yapay Zeka Karar Mekanizması**")
     if file and model:
+        # Görüntü Ön İşleme
         img_resized = img.resize((128, 128))
         img_array = np.array(img_resized) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
@@ -116,14 +117,22 @@ with c2:
                 res_idx = np.argmax(preds)
                 guven = np.max(preds) * 100
                 
-                st.metric("Sistem Tahmini", classes[res_idx])
-                st.write(f"**Güven Oranı:** %{guven:.2f}")
-                st.progress(int(guven))
-                
-                if res_idx == 1:
-                    st.error("Kritik Uyarı: Malignant doku yapısı tespit edildi. Klinik inceleme gereklidir.")
+                # --- GÜVENLİK FİLTRESİ ---
+                # Modelin tahmin güveni %60'ın altındaysa (yani kedi/köpek/manzara gibi alakasız bir görselse)
+                if guven < 60.0:
+                    st.error("⚠️ **Hatalı Görüntü Formatı!**")
+                    st.warning("Yüklenen görsel tıbbi bir ultrason görüntüsü olarak tanımlanamadı. Analiz durduruldu.")
+                    st.info("Lütfen sadece meme ultrasonu çekimlerini yükleyiniz.")
                 else:
-                    st.success("Düşük Risk: Bulgular stabil değerlendirilmiştir.")
+                    # Güven oranı %60 ve üzerindeyse teşhis sonuçlarını göster
+                    st.metric("Sistem Tahmini", classes[res_idx])
+                    st.write(f"**Güven Oranı:** %{guven:.2f}")
+                    st.progress(int(guven))
+                    
+                    if res_idx == 1:
+                        st.error("Kritik Uyarı: Malignant (Kötü Huylu) doku yapısı tespit edildi. Acil klinik inceleme gereklidir.")
+                    else:
+                        st.success("Düşük Risk: Bulgular stabil ve güvenli sınırda değerlendirilmiştir.")
 
 # --- 8. AKADEMİK KAYNAKÇA ---
 st.divider()
