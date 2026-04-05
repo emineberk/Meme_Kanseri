@@ -40,7 +40,7 @@ with st.expander("Metodoloji ve Başarı Oranları", expanded=True):
     col_a, col_b = st.columns(2)
     with col_a:
         st.write("### CNN Katman Mimarisi")
-        st.write("Model; Conv2D, MaxPooling ve Dropout katmanları kullanılarak tıbbi görüntüler için optimize edilmiştir.")
+        st.write("Model; Conv2D, MaxPooling ve Dropout katmanları ile tıbbi görüntü analizi için optimize edilmiştir.")
     with col_b:
         st.write("### Başarı İstatistikleri")
         st.success("**Eğitim Başarı Oranı:** %92.4")
@@ -48,35 +48,39 @@ with st.expander("Metodoloji ve Başarı Oranları", expanded=True):
 
 st.divider()
 
-# --- 6. MODEL PERFORMANS ANALİZİ (BAŞLIKLAR DÜZELTİLDİ) ---
+# --- 6. MODEL PERFORMANS ANALİZİ (GÖRSELDEKİ SIRALAMA İLE BİREBİR AYNI) ---
 st.subheader("Model Eğitim Performans Grafikleri")
 col_g1, col_g2, col_g3 = st.columns(3)
 
-# Dosya Yolları
+# Görselindeki gerçek sıralama:
+# 1. Grafik (Sol): Accuracy (Doğruluk)
+# 2. Grafik (Orta): Confusion Matrix (Karmaşıklık Matrisi)
+# 3. Grafik (Sağ): Loss (Kayıp)
+
+dogruluk_yolu = 'Ekran görüntüsü 2026-04-05 172317.png' 
 karma_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'
 kayip_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
-dogruluk_yolu = 'Ekran görüntüsü 2026-04-05 172317.png' 
 
 with col_g1:
-    st.write("**1. Karmaşıklık Matrisi (Confusion Matrix)**")
+    st.write("**1. Doğruluk (Accuracy) Grafiği**")
+    if os.path.exists(dogruluk_yolu):
+        st.image(dogruluk_yolu, use_container_width=True)
+    else:
+        st.error("Doğruluk grafiği bulunamadı.")
+
+with col_g2:
+    st.write("**2. Karmaşıklık Matrisi (Confusion Matrix)**")
     if os.path.exists(karma_yolu):
         st.image(karma_yolu, use_container_width=True)
     else:
         st.error("Matris dosyası bulunamadı.")
 
-with col_g2:
-    st.write("**2. Kayıp (Loss) Grafiği**")
+with col_g3:
+    st.write("**3. Kayıp (Loss) Grafiği**")
     if os.path.exists(kayip_yolu):
         st.image(kayip_yolu, use_container_width=True)
     else:
         st.error("Kayıp grafiği bulunamadı.")
-
-with col_g3:
-    st.write("**3. Doğruluk (Accuracy) Grafiği**")
-    if os.path.exists(dogruluk_yolu):
-        st.image(dogruluk_yolu, use_container_width=True)
-    else:
-        st.error("Doğruluk grafiği bulunamadı.")
 
 st.divider()
 
@@ -105,10 +109,10 @@ with c2:
                 res_idx = np.argmax(preds)
                 guven = np.max(preds) * 100
                 
-                # --- REDDETME KRİTERİ (%75 Üstü Güven Gerekir) ---
+                # --- REDDETME KRİTERİ ---
                 if guven < 75.0:
                     st.error("⚠️ **Analiz Başarısız: Geçersiz Görüntü**")
-                    st.warning("Yüklenen görsel tıbbi bir ultrason yapısı göstermiyor veya modelin tanıyabileceği kalitede değil. Lütfen geçerli bir meme ultrasonu yükleyin.")
+                    st.warning("Yüklenen görsel tıbbi bir ultrason yapısı göstermiyor. Lütfen geçerli bir tıbbi görüntü yükleyin.")
                 else:
                     st.metric("Sistem Tahmini", classes[res_idx])
                     st.write(f"**Güven Oranı:** %{guven:.2f}")
