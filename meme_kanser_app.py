@@ -48,43 +48,39 @@ with st.expander("Metodoloji ve Başarı Oranları", expanded=True):
 
 st.divider()
 
-# --- 6. MODEL PERFORMANS ANALİZİ (GÖRSELDEKİ SIRALAMA İLE BİREBİR AYNI) ---
+# --- 6. MODEL PERFORMANS ANALİZİ (GÖRSELDEKİ SIRALAMAYA GÖRE) ---
 st.subheader("Model Eğitim Performans Grafikleri")
 col_g1, col_g2, col_g3 = st.columns(3)
 
-# Görselindeki gerçek sıralama:
-# 1. Grafik (Sol): Accuracy (Doğruluk)
-# 2. Grafik (Orta): Confusion Matrix (Karmaşıklık Matrisi)
-# 3. Grafik (Sağ): Loss (Kayıp)
-
+# Dosya Yolları
+kayip_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
 dogruluk_yolu = 'Ekran görüntüsü 2026-04-05 172317.png' 
 karma_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'
-kayip_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
 
 with col_g1:
-    st.write("**1. Doğruluk (Accuracy) Grafiği**")
+    st.write("**1. Kayıp (Loss) Grafiği**")
+    if os.path.exists(kayip_yolu):
+        st.image(kayip_yolu, use_container_width=True)
+    else:
+        st.error("Kayıp grafiği dosyası bulunamadı.")
+
+with col_g2:
+    st.write("**2. Doğruluk (Accuracy) Grafiği**")
     if os.path.exists(dogruluk_yolu):
         st.image(dogruluk_yolu, use_container_width=True)
     else:
-        st.error("Doğruluk grafiği bulunamadı.")
+        st.error("Doğruluk grafiği dosyası bulunamadı.")
 
-with col_g2:
-    st.write("**2. Karmaşıklık Matrisi (Confusion Matrix)**")
+with col_g3:
+    st.write("**3. Karmaşıklık Matrisi (Confusion Matrix)**")
     if os.path.exists(karma_yolu):
         st.image(karma_yolu, use_container_width=True)
     else:
         st.error("Matris dosyası bulunamadı.")
 
-with col_g3:
-    st.write("**3. Kayıp (Loss) Grafiği**")
-    if os.path.exists(kayip_yolu):
-        st.image(kayip_yolu, use_container_width=True)
-    else:
-        st.error("Kayıp grafiği bulunamadı.")
-
 st.divider()
 
-# --- 7. ANALİZ ALANI VE REDDETME FİLTRESİ ---
+# --- 7. ANALİZ ALANI VE GÜVENLİK FİLTRESİ ---
 st.subheader("Görüntü Analizi ve Canlı Teşhis")
 c1, c2 = st.columns([1, 1])
 
@@ -109,18 +105,21 @@ with c2:
                 res_idx = np.argmax(preds)
                 guven = np.max(preds) * 100
                 
-                # --- REDDETME KRİTERİ ---
+                # --- ALAKASIZ FOTOĞRAF ENGELLEME (%75 EŞİĞİ) ---
                 if guven < 75.0:
-                    st.error("⚠️ **Analiz Başarısız: Geçersiz Görüntü**")
-                    st.warning("Yüklenen görsel tıbbi bir ultrason yapısı göstermiyor. Lütfen geçerli bir tıbbi görüntü yükleyin.")
+                    st.error("⚠️ **Analiz Reddedildi: Geçersiz Görüntü**")
+                    st.warning(f"Sistem güven oranı düşük (%{guven:.2f}). Yüklenen görsel tıbbi bir ultrason yapısı içermiyor olabilir.")
+                    st.info("Lütfen net ve sadece meme ultrasonu içeren bir dosya yükleyin.")
                 else:
                     st.metric("Sistem Tahmini", classes[res_idx])
                     st.write(f"**Güven Oranı:** %{guven:.2f}")
                     st.progress(int(guven))
                     
                     if res_idx == 1:
-                        st.error("Kritik Uyarı: Malignant yapı tespit edildi. Klinik inceleme gereklidir.")
+                        st.error("Kritik Uyarı: Malignant (Kötü Huylu) yapı tespit edildi. Klinik inceleme gereklidir.")
                     else:
                         st.success("Düşük Risk: Bulgular stabil değerlendirilmiştir.")
 
-st.caption("© 2026 Sağlık46 | Giresun Üniversitesi")
+# --- 8. ALT BİLGİ ---
+st.divider()
+st.caption("© 2026 Sağlık46 | Giresun Üniversitesi | Mühendislik Fakültesi")
