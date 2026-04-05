@@ -53,9 +53,10 @@ st.subheader("Model Eğitim Performans Grafikleri")
 col_g1, col_g2, col_g3 = st.columns(3)
 
 # Dosya Yolları
-kayip_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
-dogruluk_yolu = 'Ekran görüntüsü 2026-04-05 172317.png' 
-karma_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'
+kayip_yolu = 'Ekran görüntüsü 2026-04-05 172317.png'
+dogruluk_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'
+karma_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
+
 
 with col_g1:
     st.write("**1. Kayıp (Loss) Grafiği**")
