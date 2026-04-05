@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageStat
 import gdown
 import tensorflow as tf
 
@@ -19,7 +19,6 @@ class FixedDense(tf.keras.layers.Dense):
 def model_getir():
     model_yolu = 'Meme_Kanseri_Final_Modeli.h5'
     if not os.path.exists(model_yolu):
-        # Google Drive'dan modeli çekme işlemi
         file_id = '14OW6zCuzug3Ge7dZoqPuKrbFuOXr6meb'
         drive_url = f'https://drive.google.com/uc?id={file_id}'
         try:
@@ -36,62 +35,37 @@ st.title("Sağlık46: Meme Kanseri Teşhis Sistemi")
 st.write(f"**Araştırmacı:** Emine Berk (2207060044) | **Danışman:** Dr. Öğr. Üyesi Muhammet Çakmak")
 st.divider()
 
-# --- 5. DETAYLI CNN KATMANLARI VE BAŞARI ORANLARI ---
-with st.expander("Metodoloji, Katman Mimarisi ve Başarı Oranları", expanded=True):
+# --- 5. METODOLOJİ ---
+with st.expander("Metodoloji ve Başarı Oranları", expanded=False):
     col_a, col_b = st.columns(2)
     with col_a:
         st.write("### CNN Katman Mimarisi")
-        st.write("""
-        1. **Convolutional Layer (Evrişim):** Filtreler yardımıyla görüntüdeki kenar, doku ve tümör sınırlarını tespit eder.
-        2. **MaxPooling Layer (Havuzlama):** Veriyi sadeleştirerek en belirgin özellikleri korur.
-        3. **Dropout Layer:** Modelin ezberlemesini (overfitting) engellemek için bazı nöronları rastgele kapatır.
-        4. **Flatten & Dense:** Özellik haritasını sınıflandırma için yoğun ağ yapısına aktarır.
-        5. **Softmax:** Çıkış katmanı olup, Normal, Benign veya Malignant olasılık yüzdesini üretir.
-        """)
+        st.write("Evrişim (Conv2D), Havuzlama (MaxPooling) ve Dropout katmanları ile optimize edilmiştir.")
     with col_b:
         st.write("### Başarı İstatistikleri")
-        st.success("**Eğitim (Training) Başarı Oranı:** %92.4")
-        st.info("**Doğrulama (Validation) Başarı Oranı:** %77.1")
-        st.write("""
-        Modelimiz; **Adam** optimizasyon algoritması kullanılarak eğitilmiş olup, 
-        görüntülerin 128x128 boyutunda normalize edilmesiyle yüksek kararlılık sağlanmıştır.
-        """)
+        st.success("**Eğitim:** %92.4 | **Doğrulama:** %77.1")
 
 st.divider()
 
-# --- 6. MODEL PERFORMANS ANALİZİ (3 Grafik Yan Yana) ---
+# --- 6. PERFORMANS GRAFİKLERİ ---
 st.subheader("Model Eğitim Performans Grafikleri")
 col_g1, col_g2, col_g3 = st.columns(3)
 
-# Dosya Yolları
 kayip_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
 dogruluk_yolu = 'Ekran görüntüsü 2026-04-05 172317.png' 
 karma_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'
 
-with col_g1:
-    st.write("**1. Eğitim/Doğrulama Kaybı (Loss)**")
-    if os.path.exists(kayip_yolu):
-        st.image(kayip_yolu, use_container_width=True)
-    else:
-        st.error("Kayıp grafiği bulunamadı.")
-
-with col_g2:
-    st.write("**2. Eğitim/Doğrulama Doğruluğu (Accuracy)**")
-    if os.path.exists(dogruluk_yolu):
-        st.image(dogruluk_yolu, use_container_width=True)
-    else:
-        st.error("Doğruluk grafiği bulunamadı.")
-
-with col_g3:
-    st.write("**3. Karmaşıklık Matrisi (Matrix)**")
-    if os.path.exists(karma_yolu):
-        st.image(karma_yolu, use_container_width=True)
-    else:
-        st.error("Matris dosyası bulunamadı.")
+for col, path, title in zip([col_g1, col_g2, col_g3], 
+                            [kayip_yolu, dogruluk_yolu, karma_yolu], 
+                            ["Kayıp (Loss)", "Doğruluk (Accuracy)", "Karmaşıklık Matrisi"]):
+    with col:
+        st.write(f"**{title}**")
+        if os.path.exists(path): st.image(path, use_container_width=True)
+        else: st.error("Dosya eksik.")
 
 st.divider()
 
-# --- 7. ANALİZ ALANI ---
+# --- 7. ANALİZ VE REDDETME MEKANİZMASI ---
 st.subheader("Görüntü Analizi ve Canlı Teşhis")
 c1, c2 = st.columns([1, 1])
 
@@ -105,40 +79,38 @@ with c1:
 with c2:
     st.write("**Yapay Zeka Karar Mekanizması**")
     if file and model:
-        # Görüntü Ön İşleme
-        img_resized = img.resize((128, 128))
-        img_array = np.array(img_resized) / 255.0
-        img_array = np.expand_dims(img_array, axis=0)
-        
-        if st.button("Teşhisi Başlat"):
-            with st.spinner('Analiz ediliyor...'):
-                preds = model.predict(img_array)
-                classes = ['İyi Huylu (Benign)', 'Kötü Huylu (Malignant)', 'Normal']
-                res_idx = np.argmax(preds)
-                guven = np.max(preds) * 100
-                
-                # --- GÜVENLİK FİLTRESİ ---
-                # Modelin tahmin güveni %60'ın altındaysa (yani kedi/köpek/manzara gibi alakasız bir görselse)
-                if guven < 60.0:
-                    st.error("⚠️ **Hatalı Görüntü Formatı!**")
-                    st.warning("Yüklenen görsel tıbbi bir ultrason görüntüsü olarak tanımlanamadı. Analiz durduruldu.")
-                    st.info("Lütfen sadece meme ultrasonu çekimlerini yükleyiniz.")
-                else:
-                    # Güven oranı %60 ve üzerindeyse teşhis sonuçlarını göster
-                    st.metric("Sistem Tahmini", classes[res_idx])
-                    st.write(f"**Güven Oranı:** %{guven:.2f}")
-                    st.progress(int(guven))
-                    
-                    if res_idx == 1:
-                        st.error("Kritik Uyarı: Malignant (Kötü Huylu) doku yapısı tespit edildi. Acil klinik inceleme gereklidir.")
-                    else:
-                        st.success("Düşük Risk: Bulgular stabil ve güvenli sınırda değerlendirilmiştir.")
+        # 1. AŞAMA: RENK ANALİZİ (Ultrasonlar genelde düşük doygunluktadır)
+        stat = ImageStat.Stat(img)
+        # Eğer görsel çok renkliyse (standart sapma yüksekse) ultrason değildir
+        is_colored = sum(stat.stddev) > 120 
 
-# --- 8. AKADEMİK KAYNAKÇA ---
-st.divider()
-with st.expander("Akademik Referanslar"):
-    st.caption("1. Al-Dhabyani, W., et al. (2020). Dataset of breast ultrasound images. Data in Brief.")
-    st.caption("2. Simonyan, K., & Zisserman, A. (2014). Very Deep Convolutional Networks for Large-Scale Image Recognition.")
-    st.caption("3. Esteva, A., et al. (2017). Dermatologist-level classification with deep neural networks. Nature.")
+        if st.button("Teşhisi Başlat"):
+            if is_colored:
+                st.error("❌ **HATA: Geçersiz Görsel Tipi!**")
+                st.warning("Yüklediğiniz görsel çok fazla renk içeriyor. Meme ultrasonu görüntüleri gri tonlamalı (Siyah-Beyaz) olmalıdır. Lütfen geçerli bir tıbbi görüntü yükleyin.")
+            else:
+                with st.spinner('Analiz ediliyor...'):
+                    img_resized = img.resize((128, 128))
+                    img_array = np.array(img_resized) / 255.0
+                    img_array = np.expand_dims(img_array, axis=0)
+                    
+                    preds = model.predict(img_array)
+                    classes = ['İyi Huylu (Benign)', 'Kötü Huylu (Malignant)', 'Normal']
+                    res_idx = np.argmax(preds)
+                    guven = np.max(preds) * 100
+                    
+                    # 2. AŞAMA: GÜVEN EŞİĞİ (Threshold %80)
+                    if guven < 80.0:
+                        st.error("⚠️ **Analiz Reddedildi!**")
+                        st.info("Bu görsel bir meme ultrasonu yapısına sahip değil veya görüntü kalitesi çok düşük. Güvenli bir teşhis yapılamıyor.")
+                    else:
+                        st.metric("Sistem Tahmini", classes[res_idx])
+                        st.write(f"**Güven Oranı:** %{guven:.2f}")
+                        st.progress(int(guven))
+                        
+                        if res_idx == 1:
+                            st.error("Kritik Uyarı: Malignant yapı tespit edildi.")
+                        else:
+                            st.success("Düşük Risk: Bulgular stabil.")
 
 st.caption("© 2026 Sağlık46 | Giresun Üniversitesi")
