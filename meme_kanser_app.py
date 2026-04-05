@@ -9,6 +9,7 @@ import tensorflow as tf
 st.set_page_config(page_title="Sağlık46 | Giresun Üniversitesi", layout="wide")
 
 # --- 2. HATA GİDERİCİ (CUSTOM OBJECTS) ---
+# Bazı Keras versiyonlarında model yüklerken oluşan 'quantization_config' hatasını engeller.
 class FixedDense(tf.keras.layers.Dense):
     def __init__(self, *args, **kwargs):
         kwargs.pop('quantization_config', None)
@@ -42,10 +43,10 @@ with st.expander("Metodoloji, Katman Mimarisi ve Başarı Oranları", expanded=T
         st.write("### CNN Katman Mimarisi")
         st.write("""
         1. **Convolutional Layer (Evrişim):** Filtreler yardımıyla görüntüdeki kenar, doku ve tümör sınırlarını tespit eder.
-        2. **MaxPooling Layer (Havuzlama):** Veriyi sadeleştirerek en belirgin özellikleri korur, işlem yükünü azaltır.
-        3. **Dropout Layer:** Modelin veriyi ezberlemesini (overfitting) engellemek için eğitim sırasında bazı nöronları rastgele kapatır.
-        4. **Flatten & Dense:** Özellik haritasını düzleştirip sınıflandırma için yoğun ağ yapısına aktarır.
-        5. **Softmax:** Çıkış katmanı olup, görüntünün Normal, Benign veya Malignant olma olasılık yüzdesini üretir.
+        2. **MaxPooling Layer (Havuzlama):** Veriyi sadeleştirerek en belirgin özellikleri korur.
+        3. **Dropout Layer:** Modelin ezberlemesini (overfitting) engellemek için bazı nöronları rastgele kapatır.
+        4. **Flatten & Dense:** Özellik haritasını sınıflandırma için yoğun ağ yapısına aktarır.
+        5. **Softmax:** Çıkış katmanı olup, Normal, Benign veya Malignant olasılık yüzdesini üretir.
         """)
     with col_b:
         st.write("### Başarı İstatistikleri")
@@ -53,29 +54,36 @@ with st.expander("Metodoloji, Katman Mimarisi ve Başarı Oranları", expanded=T
         st.info("**Doğrulama (Validation) Başarı Oranı:** %77.1")
         st.write("""
         Modelimiz; **Adam** optimizasyon algoritması kullanılarak eğitilmiş olup, 
-        görüntülerin 128x128 boyutunda normalize edilmesiyle (0-255 -> 0-1) yüksek kararlılık sağlanmıştır.
+        görüntülerin 128x128 boyutunda normalize edilmesiyle yüksek kararlılık sağlanmıştır.
         """)
-
-
 
 st.divider()
 
-# --- 6. MODEL PERFORMANS ANALİZİ ---
+# --- 6. MODEL PERFORMANS ANALİZİ (3 Grafikli Yapı) ---
 st.subheader("Model Eğitim Performans Grafikleri")
-col_g1, col_g2 = st.columns(2)
+col_g1, col_g2, col_g3 = st.columns(3)
 
-grafik_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
+# Dosya Yolları
+kayip_yolu = 'Ekran görüntüsü 2026-03-29 231910.png' 
+dogruluk_yolu = 'Ekran görüntüsü 2026-04-05 172317.png' 
 karma_yolu = 'Ekran görüntüsü 2026-03-29 232001.png'
 
 with col_g1:
-    st.write("**Eğitim ve Doğrulama (Accuracy/Loss)**")
-    if os.path.exists(grafik_yolu):
-        st.image(grafik_yolu, use_container_width=True)
+    st.write("**1. Eğitim/Doğrulama Kaybı (Loss)**")
+    if os.path.exists(kayip_yolu):
+        st.image(kayip_yolu, use_container_width=True)
     else:
-        st.error("Grafik dosyası bulunamadı.")
+        st.error("Kayıp grafiği bulunamadı.")
 
 with col_g2:
-    st.write("**Karmaşıklık Matrisi (Confusion Matrix)**")
+    st.write("**2. Eğitim/Doğrulama Doğruluğu (Accuracy)**")
+    if os.path.exists(dogruluk_yolu):
+        st.image(dogruluk_yolu, use_container_width=True)
+    else:
+        st.error("Doğruluk grafiği bulunamadı.")
+
+with col_g3:
+    st.write("**3. Karmaşıklık Matrisi (Matrix)**")
     if os.path.exists(karma_yolu):
         st.image(karma_yolu, use_container_width=True)
     else:
